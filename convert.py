@@ -12,13 +12,15 @@ from PIL import Image
 # ========================================================================== #
 def check_args():
   parser = argparse.ArgumentParser(add_help=False)
-  parser.add_argument('-dir', help='directory path', required=True)
+  # parser.add_argument('-dir', help='directory path', required=True)
+  parser.add_argument('-path', help='full path', required=True)
   parser.add_argument('-delete', help='delete old file', action='store_true')
   args = parser.parse_args()
 
   try:
     result = {}
-    result['dir'] = args.dir
+    # result['dir'] = args.dir
+    result['path'] = args.path
     result['delete'] = args.delete
     return result
   except Exception as e:
@@ -33,7 +35,11 @@ def check_args():
 class MyTool:
   def __init__(self, args):
     self.def_name = 'init'
-    self.target_dir_path = args['dir']
+    # self.target_dir_path = args['dir']
+    self.full_path = args['path']
+    self.dirname = os.path.dirname(self.full_path)
+    self.basename = os.path.basename(self.full_path)
+    self.filename, self.ext = os.path.splitext(self.basename)
     self.delete = args['delete']
 
   # ====================================================================== #
@@ -56,6 +62,7 @@ class MyTool:
     description = f'Processing of "{self.def_name}" function is started.'
     self.printLog('INFO', f'[ OK ] {description}')
 
+    os.chdir(f'{self.dirname}/{self.filename}')
     # フォルダ内のwebpをリスト化
     files = glob.glob('*.webp')
     self.printLog('INFO', f'"{len(files)}" files found.')
@@ -89,17 +96,35 @@ class MyTool:
     self.printLog('INFO', f'[ OK ] {message}')
 
   # ========================================================================== #
-  #  関数名: to_zip
+  #  関数名: dir_to_zip
   # -------------------------------------------------------------------------- #
-  #  説明: zipに変換
+  #  説明: dirをzipに変換
   # ========================================================================== #
-  def to_zip(self):
-    self.def_name = 'to_zip'
+  def dir_to_zip(self):
+    self.def_name = 'dir_to_zip'
     description = f'Processing of "{self.def_name}" function is started.'
     self.printLog('INFO', f'[ OK ] {description}')
 
-    name, _ = os.path.splitext(os.path.basename(self.target_dir_path))
-    shutil.make_archive(name, format='zip', root_dir=self.target_dir_path)
+    os.chdir(self.dirname)
+    shutil.make_archive(self.filename, format='zip', root_dir=self.filename)
+    shutil.rmtree(f'{self.dirname}/{self.filename}')
+
+    # ログ作業後処理
+    message = f'"{self.def_name}" completed.'
+    self.printLog('INFO', f'[ OK ] {message}')
+
+  # ========================================================================== #
+  #  関数名: zip_to_dir
+  # -------------------------------------------------------------------------- #
+  #  説明: zipをdirに変換
+  # ========================================================================== #
+  def zip_to_dir(self):
+    self.def_name = 'zip_to_dir'
+    description = f'Processing of "{self.def_name}" function is started.'
+    self.printLog('INFO', f'[ OK ] {description}')
+
+    # os.chdir(self.dirname)
+    shutil.unpack_archive(self.full_path, f'{self.dirname}/{self.filename}')
 
     # ログ作業後処理
     message = f'"{self.def_name}" completed.'
@@ -111,13 +136,21 @@ class MyTool:
 def main():
   args = check_args()
   tool = MyTool(args)
-  os.chdir(tool.target_dir_path)
+  print(f'full_path: {tool.full_path}')
+  print(f'dirname: {tool.dirname}')
+  print(f'basename: {tool.basename}')
+  print(f'filename: {tool.filename}')
+  print(f'ext: {tool.ext}')
+
+  tool.zip_to_dir()
+
   files = tool.count_files()
+
   for f in files:
     tool.convert(f)
 
-  os.chdir('../')
-  tool.to_zip()
+  os.rename(tool.full_path, f'{tool.dirname}/{tool.filename}_old{tool.ext}')
+  tool.dir_to_zip()
 
 if __name__ == '__main__':
   main()
