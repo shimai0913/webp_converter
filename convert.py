@@ -1,6 +1,7 @@
 import argparse
 import glob
 import os
+import shutil
 from PIL import Image
 
 # ========================================================================== #
@@ -87,6 +88,23 @@ class MyTool:
     message = f'"{self.def_name}" completed. {name}.webp -> {name}.jpg'
     self.printLog('INFO', f'[ OK ] {message}')
 
+  # ========================================================================== #
+  #  関数名: to_zip
+  # -------------------------------------------------------------------------- #
+  #  説明: zipに変換
+  # ========================================================================== #
+  def to_zip(self):
+    self.def_name = 'to_zip'
+    description = f'Processing of "{self.def_name}" function is started.'
+    self.printLog('INFO', f'[ OK ] {description}')
+
+    name, _ = os.path.splitext(os.path.basename(self.target_dir_path))
+    shutil.make_archive(name, format='zip', root_dir=self.target_dir_path)
+
+    # ログ作業後処理
+    message = f'"{self.def_name}" completed.'
+    self.printLog('INFO', f'[ OK ] {message}')
+
 # ========================================================================== #
 #  メインパート
 # ========================================================================== #
@@ -97,6 +115,9 @@ def main():
   files = tool.count_files()
   for f in files:
     tool.convert(f)
+
+  os.chdir('../')
+  tool.to_zip()
 
 if __name__ == '__main__':
   main()
